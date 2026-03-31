@@ -9,6 +9,7 @@ import com.portfolio.cinebooking.repositorio.UsuarioRepository;
 import com.portfolio.cinebooking.seguranca.TokenServico;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AutenticacaoController {
 
@@ -38,22 +39,23 @@ public class AutenticacaoController {
         return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
-    @PostMapping("/registrar")
-    public ResponseEntity<Void> registrar(@RequestBody @Valid RegistroRequestDTO dados) {
+    @PostMapping("/signup")
+    public ResponseEntity<LoginResponseDTO> signup(@RequestBody @Valid RegistroRequestDTO dados) {
         if (usuarioRepository.findByEmail(dados.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
 
         var senhaEncriptada = passwordEncoder.encode(dados.getSenha());
-        
+
         var novoUsuario = new Usuario();
         novoUsuario.setNome(dados.getNome());
         novoUsuario.setEmail(dados.getEmail());
         novoUsuario.setSenha(senhaEncriptada);
         novoUsuario.setPerfil(Perfil.CLIENTE);
 
-        usuarioRepository.save(novoUsuario);
+        var salvo = usuarioRepository.save(novoUsuario);
+        var token = tokenServico.gerarToken(salvo);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(new LoginResponseDTO(token));
     }
 }
