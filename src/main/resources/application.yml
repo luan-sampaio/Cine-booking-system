@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: cine-booking
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cine_booking
+    username: cine_user
+    password: cine_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate 
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+jwt:
+  secret: 4b4860df890352ce006a147e0cb3a0fb5b67a54160ebbf214d026bd6cae9d3d9 
+  expirationMs: 86400000
+
+server:
+  port: 8080

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cine_db
+    environment:
+      POSTGRES_DB: cine_booking
+      POSTGRES_USER: cine_user
+      POSTGRES_PASSWORD: cine_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_cine:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data_cine:
