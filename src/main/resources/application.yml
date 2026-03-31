@@ -24,5 +24,12 @@ jwt:
   secret: 4b4860df890352ce006a147e0cb3a0fb5b67a54160ebbf214d026bd6cae9d3d9 
   expirationMs: 86400000
 
+seed:
+  admin:
+    enabled: true
+    nome: Admin
+    email: admin@cinebooking.com
+    senha: Admin@123
+
 server:
   port: 8080
