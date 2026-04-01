@@ -11,6 +11,7 @@ public record SessaoResponseDTO(
         String salaNome,
         LocalDateTime inicio,
         LocalDateTime fim,
-        LocalDateTime criadoEm
+        LocalDateTime criadoEm,
+        long totalAssentos
 ) {
 }

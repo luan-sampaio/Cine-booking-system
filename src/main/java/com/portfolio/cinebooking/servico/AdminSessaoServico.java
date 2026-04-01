@@ -57,6 +57,13 @@ public class AdminSessaoServico {
 
         garantirSemSobreposicao(dto.getSalaId(), dto.getInicio(), dto.getFim(), null);
 
+        List<Assento> assentosDaSala = assentoRepository.findBySala_IdOrderByRowLabelAscSeatNumberAsc(sala.getId());
+        if (assentosDaSala.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A sala não possui assentos configurados. Use PUT /api/admin/salas/{id}/assentos/layout antes de criar a sessão.");
+        }
+
         Sessao sessao = new Sessao();
         sessao.setFilme(filme);
         sessao.setSala(sala);
@@ -64,7 +71,7 @@ public class AdminSessaoServico {
         sessao.setFim(dto.getFim());
         sessao = sessaoRepository.save(sessao);
 
-        popularAssentosDaSala(sessao, sala.getId());
+        gerarAssentosSessaoPreemptivamente(sessao, assentosDaSala);
 
         return paraDTO(sessao);
     }
@@ -116,13 +123,9 @@ public class AdminSessaoServico {
         }
     }
 
-    private void popularAssentosDaSala(Sessao sessao, UUID salaId) {
-        List<Assento> assentos = assentoRepository.findBySala_IdOrderByRowLabelAscSeatNumberAsc(salaId);
-        if (assentos.isEmpty()) {
-            return;
-        }
-        List<AssentoSessao> linhas = new ArrayList<>(assentos.size());
-        for (Assento assento : assentos) {
+    private void gerarAssentosSessaoPreemptivamente(Sessao sessao, List<Assento> assentosDaSala) {
+        List<AssentoSessao> linhas = new ArrayList<>(assentosDaSala.size());
+        for (Assento assento : assentosDaSala) {
             AssentoSessao linha = new AssentoSessao();
             linha.setSessao(sessao);
             linha.setAssento(assento);
@@ -133,6 +136,7 @@ public class AdminSessaoServico {
     }
 
     private SessaoResponseDTO paraDTO(Sessao s) {
+        long total = assentoSessaoRepository.countBySessao_Id(s.getId());
         return new SessaoResponseDTO(
                 s.getId(),
                 s.getFilme().getId(),
@@ -141,6 +145,7 @@ public class AdminSessaoServico {
                 s.getSala().getNome(),
                 s.getInicio(),
                 s.getFim(),
-                s.getCriadoEm());
+                s.getCriadoEm(),
+                total);
     }
 }

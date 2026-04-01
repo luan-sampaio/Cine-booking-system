@@ -43,7 +43,10 @@ public class AdminSessaoController {
         return ResponseEntity.ok(adminSessaoServico.buscar(id));
     }
 
-    @Operation(summary = "Criar sessão", description = "Define início/fim; cria linhas em showtime_seats para os assentos atuais da sala.")
+    @Operation(
+            summary = "Criar sessão",
+            description = "Cria a sessão e gera preemptivamente showtime_seats (AVAILABLE) para cada assento do layout atual da sala. A sala precisa ter assentos configurados."
+    )
     @PostMapping
     public ResponseEntity<SessaoResponseDTO> criar(@RequestBody @Valid SessaoRequestDTO dto) {
         SessaoResponseDTO criada = adminSessaoServico.criar(dto);
