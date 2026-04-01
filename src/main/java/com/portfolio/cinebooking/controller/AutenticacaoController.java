@@ -7,6 +7,8 @@ import com.portfolio.cinebooking.modelo.Perfil;
 import com.portfolio.cinebooking.modelo.Usuario;
 import com.portfolio.cinebooking.repositorio.UsuarioRepository;
 import com.portfolio.cinebooking.seguranca.TokenServico;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Autenticação", description = "Cadastro e login (JWT)")
 public class AutenticacaoController {
 
     private final AuthenticationManager authManager;
@@ -29,6 +32,7 @@ public class AutenticacaoController {
     private final TokenServico tokenServico;
     private final PasswordEncoder passwordEncoder;
 
+    @Operation(summary = "Login", description = "Autentica por e-mail e senha; retorna JWT.")
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO dados) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(dados.getEmail(), dados.getSenha());
@@ -39,6 +43,10 @@ public class AutenticacaoController {
         return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
+    @Operation(
+            summary = "Signup (cadastro)",
+            description = "Cria usuário com perfil CLIENTE. Retorna **201** com JWT. E-mail duplicado: **409**."
+    )
     @PostMapping("/signup")
     public ResponseEntity<LoginResponseDTO> signup(@RequestBody @Valid RegistroRequestDTO dados) {
         if (usuarioRepository.findByEmail(dados.getEmail()).isPresent()) {
