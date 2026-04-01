@@ -1,4 +1,3 @@
--- Sessão de exibição: filme em uma sala com horário (término pode ser calculado na aplicação a partir da duração do filme).
 CREATE TABLE showtimes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     movie_id UUID NOT NULL REFERENCES movies (id),
@@ -13,7 +12,6 @@ CREATE INDEX idx_showtimes_room_starts ON showtimes (room_id, starts_at);
 CREATE INDEX idx_showtimes_movie_id ON showtimes (movie_id);
 CREATE INDEX idx_showtimes_starts_at ON showtimes (starts_at);
 
--- Estado de cada assento na sessão (uma linha por par sessão + assento após popularização na aplicação).
 CREATE TABLE showtime_seats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     showtime_id UUID NOT NULL REFERENCES showtimes (id) ON DELETE CASCADE,
