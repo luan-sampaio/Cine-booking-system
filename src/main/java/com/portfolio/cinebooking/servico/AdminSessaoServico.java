@@ -1,5 +1,6 @@
 package com.portfolio.cinebooking.servico;
 
+import com.portfolio.cinebooking.dto.SessaoHorarioRequestDTO;
 import com.portfolio.cinebooking.dto.SessaoRequestDTO;
 import com.portfolio.cinebooking.dto.SessaoResponseDTO;
 import com.portfolio.cinebooking.modelo.Assento;
@@ -77,20 +78,14 @@ public class AdminSessaoServico {
     }
 
     @Transactional
-    public SessaoResponseDTO atualizar(UUID id, SessaoRequestDTO dto) {
+    public SessaoResponseDTO atualizar(UUID id, SessaoHorarioRequestDTO dto) {
         validarIntervalo(dto.getInicio(), dto.getFim());
 
         Sessao sessao = sessaoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sessão não encontrada"));
 
-        if (!sessao.getFilme().getId().equals(dto.getFilmeId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é permitido alterar o filme da sessão");
-        }
-        if (!sessao.getSala().getId().equals(dto.getSalaId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é permitido alterar a sala da sessão");
-        }
-
-        garantirSemSobreposicao(dto.getSalaId(), dto.getInicio(), dto.getFim(), id);
+        
+        garantirSemSobreposicao(sessao.getSala().getId(), dto.getInicio(), dto.getFim(), id);
 
         sessao.setInicio(dto.getInicio());
         sessao.setFim(dto.getFim());

@@ -1,5 +1,6 @@
 package com.portfolio.cinebooking.controller;
 
+import com.portfolio.cinebooking.dto.SessaoHorarioRequestDTO;
 import com.portfolio.cinebooking.dto.SessaoRequestDTO;
 import com.portfolio.cinebooking.dto.SessaoResponseDTO;
 import com.portfolio.cinebooking.servico.AdminSessaoServico;
@@ -57,7 +58,7 @@ public class AdminSessaoController {
     @PutMapping("/{id}")
     public ResponseEntity<SessaoResponseDTO> atualizar(
             @PathVariable UUID id,
-            @RequestBody @Valid SessaoRequestDTO dto) {
+            @RequestBody @Valid SessaoHorarioRequestDTO dto) {
         return ResponseEntity.ok(adminSessaoServico.atualizar(id, dto));
     }
 
