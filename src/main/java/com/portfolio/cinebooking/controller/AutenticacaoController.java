@@ -45,7 +45,7 @@ public class AutenticacaoController {
 
     @Operation(
             summary = "Signup (cadastro)",
-            description = "Cria usuário com perfil CLIENTE. Retorna **201** com JWT. E-mail duplicado: **409**."
+            description = "Cria um novo usuário. Se o perfil não for especificado, o padrão é `CLIENTE`. Retorna **201** com JWT. E-mail duplicado: **409**."
     )
     @PostMapping("/signup")
     public ResponseEntity<LoginResponseDTO> signup(@RequestBody @Valid RegistroRequestDTO dados) {
@@ -59,7 +59,7 @@ public class AutenticacaoController {
         novoUsuario.setNome(dados.getNome());
         novoUsuario.setEmail(dados.getEmail());
         novoUsuario.setSenha(senhaEncriptada);
-        novoUsuario.setPerfil(Perfil.CLIENTE);
+        novoUsuario.setPerfil(dados.getPerfil() != null ? dados.getPerfil() : Perfil.CLIENTE);
 
         var salvo = usuarioRepository.save(novoUsuario);
         var token = tokenServico.gerarToken(salvo);

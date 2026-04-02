@@ -1,6 +1,7 @@
 package com.portfolio.cinebooking.dto;
 
 import jakarta.validation.constraints.Email;
+import com.portfolio.cinebooking.modelo.Perfil;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,4 +18,6 @@ public class RegistroRequestDTO {
 
     @NotBlank
     private String senha;
+
+    private Perfil perfil;
 }
