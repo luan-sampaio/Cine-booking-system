@@ -96,8 +96,6 @@ Antes de começar, você vai precisar ter instalado em sua máquina:
     Para explorar e testar os endpoints, acesse o Swagger UI no seu navegador:
     [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
----
-
 ## 👨‍💻 Autor
 
 <table>
