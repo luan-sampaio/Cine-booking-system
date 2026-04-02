@@ -102,7 +102,7 @@ Antes de começar, você vai precisar ter instalado em sua máquina:
   <tr>
     <td align="center">
       <a href="https://github.com/luan-sampaio">
-        <img src="https://avatars.githubusercontent.com/u/86182637?v=4" width="100px;" alt="Foto de Luan Sampaio no GitHub"/>
+        <img src="https://avatars.githubusercontent.com/luan-sampaio" width="100px;" alt="Foto de Luan Sampaio no GitHub"/>
         <br>
         <sub>
           <b>Luan Sampaio</b>
