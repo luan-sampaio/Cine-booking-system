@@ -42,6 +42,7 @@ cine-booking-system/
 │   │       ├── application.yml             # Configurações do Spring
 │   │       └── db/migration/               # Scripts de migração (Flyway)
 │   └── test/
+├── postman/                            # Coleção e ambiente do Postman
 ├── .gitignore
 ├── docker-compose.yml                  # Orquestração do container PostgreSQL
 ├── mvnw                                # Maven Wrapper (Linux/Mac)
@@ -95,6 +96,23 @@ Antes de começar, você vai precisar ter instalado em sua máquina:
 4.  **Acesse a documentação da API:**
     Para explorar e testar os endpoints, acesse o Swagger UI no seu navegador:
     [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+---
+
+## 🧪 Testando com Postman
+
+Para facilitar os testes dos endpoints, o projeto inclui uma coleção e um ambiente prontos para o Postman.
+
+1.  **Importe os arquivos:**
+    *   No Postman, vá em `File > Import`.
+    *   Selecione os arquivos `postman/movie-reservation-api.postman_collection.json` e `postman/movie-reservation-api.postman_environment.json`.
+
+2.  **Selecione o Ambiente:**
+    *   No canto superior direito do Postman, selecione o ambiente **"Movie Reservation API"**.
+
+3.  **Autentique-se:**
+    *   Na coleção importada, abra a pasta **Authentication** e execute a requisição **Login**.
+    *   Um script na requisição irá salvar automaticamente o token JWT no ambiente, permitindo que as requisições autenticadas funcionem sem a necessidade de copiar e colar o token.
 
 ## 👨‍💻 Autor
 
