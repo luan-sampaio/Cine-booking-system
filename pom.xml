@@ -6,12 +6,12 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.0.5</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/> 
 	</parent>
 	<groupId>com.portfolio</groupId>
-	<artifactId>cine-booking</artifactId>
+	<artifactId>movie-reservation-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>cine-booking</name>
+	<name>movie-reservation-api</name>
 	<description/>
 	<url/>
 	<licenses>
@@ -28,7 +28,6 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
-		<!-- Mesmos valores de spring.datasource.* (app em localhost + Postgres no Docker com -p 5432:5432) -->
 		<flyway.url>jdbc:postgresql://localhost:5432/cine_booking</flyway.url>
 		<flyway.user>cine_user</flyway.user>
 		<flyway.password>cine_password</flyway.password>

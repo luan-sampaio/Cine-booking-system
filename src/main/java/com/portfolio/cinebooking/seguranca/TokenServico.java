@@ -21,7 +21,7 @@ public class TokenServico {
         try {
             Algorithm algoritmo = Algorithm.HMAC256(segredo);
             return JWT.create()
-                    .withIssuer("cine-booking")
+                    .withIssuer("movie-reservation-api")
                     .withSubject(usuario.getEmail())
                     .withClaim("perfil", usuario.getPerfil().name())
                     .withExpiresAt(gerarDataExpiracao())
@@ -35,7 +35,7 @@ public class TokenServico {
         try {
             Algorithm algoritmo = Algorithm.HMAC256(segredo);
             return JWT.require(algoritmo)
-                    .withIssuer("cine-booking")
+                    .withIssuer("movie-reservation-api")
                     .build()
                     .verify(token)
                     .getSubject();

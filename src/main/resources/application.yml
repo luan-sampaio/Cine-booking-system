@@ -1,6 +1,6 @@
 spring:
   application:
-    name: cine-booking
+    name: movie-reservation-api
 
   datasource:
     url: jdbc:postgresql://localhost:5432/cine_booking
