@@ -1,5 +1,6 @@
 package com.portfolio.cinebooking.configuracao;
 
+import com.portfolio.cinebooking.seguranca.ApiSecurityExceptionHandler;
 import com.portfolio.cinebooking.seguranca.FiltroSeguranca;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -22,12 +23,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SegurancaConfig {
 
     private final FiltroSeguranca filtroSeguranca;
+    private final ApiSecurityExceptionHandler apiSecurityExceptionHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(excecoes -> excecoes
+                        .authenticationEntryPoint(apiSecurityExceptionHandler)
+                        .accessDeniedHandler(apiSecurityExceptionHandler))
                 .authorizeHttpRequests(autorizar -> autorizar
                         .requestMatchers(
                                 "/v3/api-docs/**",

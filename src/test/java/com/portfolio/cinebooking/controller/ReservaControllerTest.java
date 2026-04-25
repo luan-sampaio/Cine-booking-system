@@ -1,11 +1,13 @@
 package com.portfolio.cinebooking.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.cinebooking.configuracao.ApiExceptionHandler;
 import com.portfolio.cinebooking.dto.ReservaRequestDTO;
 import com.portfolio.cinebooking.dto.ReservaResponseDTO;
 import com.portfolio.cinebooking.modelo.Perfil;
 import com.portfolio.cinebooking.modelo.StatusReserva;
 import com.portfolio.cinebooking.modelo.Usuario;
+import com.portfolio.cinebooking.seguranca.ApiSecurityExceptionHandler;
 import com.portfolio.cinebooking.seguranca.FiltroSeguranca;
 import com.portfolio.cinebooking.servico.ReservaServico;
 import jakarta.servlet.FilterChain;
@@ -20,9 +22,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -33,10 +37,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ReservaController.class)
-@Import(com.portfolio.cinebooking.configuracao.SegurancaConfig.class)
+@Import({
+        com.portfolio.cinebooking.configuracao.SegurancaConfig.class,
+        ApiExceptionHandler.class,
+        ApiSecurityExceptionHandler.class
+})
 class ReservaControllerTest {
 
     @Autowired
@@ -114,9 +123,79 @@ class ReservaControllerTest {
                         .with(SecurityMockMvcRequestPostProcessors.user(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.erro").value("Forbidden"))
+                .andExpect(jsonPath("$.mensagem").value("Acesso negado para este recurso"))
+                .andExpect(jsonPath("$.caminho").value("/api/reservas"));
 
         verify(reservaServico, never()).reservar(any(), any());
+    }
+
+    @Test
+    void deveRetornarErroPadronizadoQuandoPayloadForInvalido() throws Exception {
+        Usuario cliente = novoUsuario(UUID.randomUUID(), Perfil.CLIENTE);
+
+        mockMvc.perform(post("/api/reservas")
+                        .with(SecurityMockMvcRequestPostProcessors.user(cliente))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("assentoSessaoIds", List.of()))))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.erro").value("Bad Request"))
+                .andExpect(jsonPath("$.mensagem").value("Dados da requisição são inválidos"))
+                .andExpect(jsonPath("$.caminho").value("/api/reservas"))
+                .andExpect(jsonPath("$.errosDeCampo").isArray());
+    }
+
+    @Test
+    void deveRetornarErroPadronizadoQuandoServicoLancarNotFound() throws Exception {
+        UUID usuarioId = UUID.randomUUID();
+        Usuario cliente = novoUsuario(usuarioId, Perfil.CLIENTE);
+
+        ReservaRequestDTO request = new ReservaRequestDTO();
+        request.setSessaoId(UUID.randomUUID());
+        request.setAssentoSessaoIds(List.of(UUID.randomUUID()));
+
+        when(reservaServico.reservar(eq(usuarioId), any(ReservaRequestDTO.class)))
+                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Sessão não encontrada"));
+
+        mockMvc.perform(post("/api/reservas")
+                        .with(SecurityMockMvcRequestPostProcessors.user(cliente))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.erro").value("Not Found"))
+                .andExpect(jsonPath("$.mensagem").value("Sessão não encontrada"))
+                .andExpect(jsonPath("$.caminho").value("/api/reservas"));
+    }
+
+    @Test
+    void deveRetornarErroPadronizadoQuandoServicoLancarConflict() throws Exception {
+        UUID usuarioId = UUID.randomUUID();
+        Usuario cliente = novoUsuario(usuarioId, Perfil.CLIENTE);
+
+        ReservaRequestDTO request = new ReservaRequestDTO();
+        request.setSessaoId(UUID.randomUUID());
+        request.setAssentoSessaoIds(List.of(UUID.randomUUID()));
+
+        when(reservaServico.reservar(eq(usuarioId), any(ReservaRequestDTO.class)))
+                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "Um ou mais assentos não estão mais disponíveis para reserva"));
+
+        mockMvc.perform(post("/api/reservas")
+                        .with(SecurityMockMvcRequestPostProcessors.user(cliente))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.erro").value("Conflict"))
+                .andExpect(jsonPath("$.mensagem").value("Um ou mais assentos não estão mais disponíveis para reserva"))
+                .andExpect(jsonPath("$.caminho").value("/api/reservas"));
     }
 
     private Usuario novoUsuario(UUID id, Perfil perfil) {
