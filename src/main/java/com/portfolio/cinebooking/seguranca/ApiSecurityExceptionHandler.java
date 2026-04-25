@@ -1,5 +1,8 @@
 package com.portfolio.cinebooking.seguranca;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.portfolio.cinebooking.dto.ApiErrorResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -10,11 +13,13 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
 
 @Component
 public class ApiSecurityExceptionHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
+
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .findAndAddModules()
+            .build();
 
     @Override
     public void commence(
@@ -38,21 +43,9 @@ public class ApiSecurityExceptionHandler implements AuthenticationEntryPoint, Ac
             String mensagem,
             HttpServletRequest request) throws IOException {
         response.setStatus(status.value());
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write("""
-                {"timestamp":"%s","status":%d,"erro":"%s","mensagem":"%s","caminho":"%s","errosDeCampo":[]}
-                """.formatted(
-                OffsetDateTime.now(),
-                status.value(),
-                escape(status.getReasonPhrase()),
-                escape(mensagem),
-                escape(request.getRequestURI())));
-    }
-
-    private String escape(String value) {
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"");
+        objectMapper.writeValue(
+                response.getWriter(),
+                ApiErrorResponseDTO.of(status, mensagem, request.getRequestURI()));
     }
 }

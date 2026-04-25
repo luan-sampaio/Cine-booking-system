@@ -134,6 +134,26 @@ class ReservaControllerTest {
     }
 
     @Test
+    void deveRetornarErroPadronizadoQuandoUsuarioNaoEstiverAutenticado() throws Exception {
+        ReservaRequestDTO request = new ReservaRequestDTO();
+        request.setSessaoId(UUID.randomUUID());
+        request.setAssentoSessaoIds(List.of(UUID.randomUUID()));
+
+        mockMvc.perform(post("/api/reservas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.erro").value("Unauthorized"))
+                .andExpect(jsonPath("$.mensagem").value("Autenticação necessária para acessar este recurso"))
+                .andExpect(jsonPath("$.caminho").value("/api/reservas"))
+                .andExpect(jsonPath("$.errosDeCampo").isArray());
+
+        verify(reservaServico, never()).reservar(any(), any());
+    }
+
+    @Test
     void deveRetornarErroPadronizadoQuandoPayloadForInvalido() throws Exception {
         Usuario cliente = novoUsuario(UUID.randomUUID(), Perfil.CLIENTE);
 
