@@ -13,9 +13,11 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 
 @ControllerAdvice
 public class ApiExceptionHandler {
@@ -89,6 +91,18 @@ public class ApiExceptionHandler {
                                 .toList()));
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiErrorResponseDTO> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request) {
+        return ResponseEntity.badRequest()
+                .body(ApiErrorResponseDTO.of(
+                        HttpStatus.BAD_REQUEST,
+                        "Parâmetros da requisição são inválidos",
+                        request.getRequestURI(),
+                        List.of(new ApiFieldErrorDTO(ex.getName(), resolveMensagemConversao(ex)))));
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponseDTO> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException ex,
@@ -115,5 +129,12 @@ public class ApiExceptionHandler {
         return HttpStatus.resolve(statusCode.value()) != null
                 ? HttpStatus.valueOf(statusCode.value())
                 : HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    private String resolveMensagemConversao(MethodArgumentTypeMismatchException ex) {
+        if (UUID.class.equals(ex.getRequiredType())) {
+            return "deve ser um UUID válido";
+        }
+        return "valor inválido";
     }
 }
