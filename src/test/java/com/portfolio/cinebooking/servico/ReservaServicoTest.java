@@ -31,6 +31,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -174,5 +175,144 @@ class ReservaServicoTest {
                     ResponseStatusException exception = (ResponseStatusException) ex;
                     assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
                 });
+    }
+
+    @Test
+    void deveRetornarNotFoundQuandoSessaoNaoExistir() {
+        UUID usuarioId = UUID.randomUUID();
+        UUID sessaoId = UUID.randomUUID();
+
+        ReservaRequestDTO dto = new ReservaRequestDTO();
+        dto.setSessaoId(sessaoId);
+        dto.setAssentoSessaoIds(List.of(UUID.randomUUID()));
+
+        when(sessaoRepository.findById(sessaoId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> reservaServico.reservar(usuarioId, dto))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> {
+                    ResponseStatusException exception = (ResponseStatusException) ex;
+                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+                    assertThat(exception.getReason()).isEqualTo("Sessão não encontrada");
+                });
+
+        verify(usuarioRepository, never()).findById(any());
+    }
+
+    @Test
+    void deveRetornarNotFoundQuandoUsuarioNaoExistir() {
+        UUID usuarioId = UUID.randomUUID();
+        UUID sessaoId = UUID.randomUUID();
+
+        Sessao sessao = new Sessao();
+        sessao.setId(sessaoId);
+
+        ReservaRequestDTO dto = new ReservaRequestDTO();
+        dto.setSessaoId(sessaoId);
+        dto.setAssentoSessaoIds(List.of(UUID.randomUUID()));
+
+        when(sessaoRepository.findById(sessaoId)).thenReturn(Optional.of(sessao));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> reservaServico.reservar(usuarioId, dto))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> {
+                    ResponseStatusException exception = (ResponseStatusException) ex;
+                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+                    assertThat(exception.getReason()).isEqualTo("Usuário não encontrado");
+                });
+
+        verify(assentoSessaoRepository, never()).findBySessaoIdAndIdIn(any(), any());
+    }
+
+    @Test
+    void deveRetornarBadRequestQuandoListaDeAssentosEstiverVazia() {
+        UUID usuarioId = UUID.randomUUID();
+        UUID sessaoId = UUID.randomUUID();
+
+        Sessao sessao = new Sessao();
+        sessao.setId(sessaoId);
+
+        Usuario usuario = new Usuario();
+        usuario.setId(usuarioId);
+
+        ReservaRequestDTO dto = new ReservaRequestDTO();
+        dto.setSessaoId(sessaoId);
+        dto.setAssentoSessaoIds(List.of());
+
+        when(sessaoRepository.findById(sessaoId)).thenReturn(Optional.of(sessao));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> reservaServico.reservar(usuarioId, dto))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> {
+                    ResponseStatusException exception = (ResponseStatusException) ex;
+                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(exception.getReason()).isEqualTo("Informe ao menos um assento para reserva");
+                });
+
+        verify(assentoSessaoRepository, never()).findBySessaoIdAndIdIn(any(), any());
+    }
+
+    @Test
+    void deveRetornarBadRequestQuandoListaDeAssentosTiverIdsDuplicados() {
+        UUID usuarioId = UUID.randomUUID();
+        UUID sessaoId = UUID.randomUUID();
+        UUID assentoSessaoId = UUID.randomUUID();
+
+        Sessao sessao = new Sessao();
+        sessao.setId(sessaoId);
+
+        Usuario usuario = new Usuario();
+        usuario.setId(usuarioId);
+
+        ReservaRequestDTO dto = new ReservaRequestDTO();
+        dto.setSessaoId(sessaoId);
+        dto.setAssentoSessaoIds(List.of(assentoSessaoId, assentoSessaoId));
+
+        when(sessaoRepository.findById(sessaoId)).thenReturn(Optional.of(sessao));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> reservaServico.reservar(usuarioId, dto))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> {
+                    ResponseStatusException exception = (ResponseStatusException) ex;
+                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(exception.getReason()).isEqualTo("A lista de assentos contém IDs duplicados");
+                });
+
+        verify(assentoSessaoRepository, never()).findBySessaoIdAndIdIn(any(), any());
+    }
+
+    @Test
+    void deveRetornarBadRequestQuandoAssentosNaoExistiremOuNaoPertenceremASessao() {
+        UUID usuarioId = UUID.randomUUID();
+        UUID sessaoId = UUID.randomUUID();
+        UUID assentoSessaoId = UUID.randomUUID();
+
+        Sessao sessao = new Sessao();
+        sessao.setId(sessaoId);
+
+        Usuario usuario = new Usuario();
+        usuario.setId(usuarioId);
+
+        ReservaRequestDTO dto = new ReservaRequestDTO();
+        dto.setSessaoId(sessaoId);
+        dto.setAssentoSessaoIds(List.of(assentoSessaoId));
+
+        when(sessaoRepository.findById(sessaoId)).thenReturn(Optional.of(sessao));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(assentoSessaoRepository.findBySessaoIdAndIdIn(sessaoId, java.util.Set.of(assentoSessaoId)))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> reservaServico.reservar(usuarioId, dto))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> {
+                    ResponseStatusException exception = (ResponseStatusException) ex;
+                    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(exception.getReason()).isEqualTo("Um ou mais assentos informados não existem ou não pertencem à sessão");
+                });
+
+        verify(assentoSessaoRepository, never()).saveAllAndFlush(any());
     }
 }

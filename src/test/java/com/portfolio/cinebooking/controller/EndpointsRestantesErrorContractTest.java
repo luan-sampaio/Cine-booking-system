@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.portfolio.cinebooking.configuracao.ApiExceptionHandler;
 import com.portfolio.cinebooking.dto.AssentosLayoutRequestDTO;
+import com.portfolio.cinebooking.dto.AssentoDisponivelResponseDTO;
 import com.portfolio.cinebooking.dto.FilaAssentosDTO;
 import com.portfolio.cinebooking.dto.FilmeRequestDTO;
 import com.portfolio.cinebooking.dto.FilmeResponseDTO;
@@ -93,6 +94,27 @@ class EndpointsRestantesErrorContractTest {
             chain.doFilter(request, response);
             return null;
         }).when(filtroSeguranca).doFilter(any(), any(), any());
+    }
+
+    @Test
+    void deveRetornarCatalogoPublicoDeFilmesComSucesso() throws Exception {
+        UUID filmeId = UUID.randomUUID();
+
+        when(filmeServico.listarParaExibicao()).thenReturn(List.of(
+                new FilmeResponseDTO(
+                        filmeId,
+                        "Filme em Cartaz",
+                        "Sinopse",
+                        125,
+                        "16",
+                        LocalDateTime.of(2026, 4, 26, 9, 0))));
+
+        mockMvc.perform(get("/api/filmes"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(filmeId.toString()))
+                .andExpect(jsonPath("$[0].titulo").value("Filme em Cartaz"))
+                .andExpect(jsonPath("$[0].duracaoMinutos").value(125));
     }
 
     @Test
@@ -292,6 +314,23 @@ class EndpointsRestantesErrorContractTest {
     }
 
     @Test
+    void deveRetornarAssentosDisponiveisQuandoConsultaForBemSucedida() throws Exception {
+        UUID sessaoId = UUID.randomUUID();
+        UUID showtimeSeatId = UUID.randomUUID();
+
+        when(sessaoConsultaServico.listarAssentosDisponiveis(sessaoId))
+                .thenReturn(List.of(new AssentoDisponivelResponseDTO(showtimeSeatId, "B", 7)));
+
+        mockMvc.perform(get("/api/sessoes/{sessaoId}/assentos-disponiveis", sessaoId)
+                        .with(SecurityMockMvcRequestPostProcessors.user(novoUsuario(Perfil.CLIENTE))))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].showtimeSeatId").value(showtimeSeatId.toString()))
+                .andExpect(jsonPath("$[0].fila").value("B"))
+                .andExpect(jsonPath("$[0].numero").value(7));
+    }
+
+    @Test
     void deveRetornarCorpoPadronizadoQuandoFilmeForCriadoComSucesso() throws Exception {
         UUID filmeId = UUID.randomUUID();
         FilmeRequestDTO request = new FilmeRequestDTO();
@@ -315,6 +354,23 @@ class EndpointsRestantesErrorContractTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(filmeId.toString()))
                 .andExpect(jsonPath("$.titulo").value("Filme Teste"));
+    }
+
+    @Test
+    void deveRetornarErroPadronizadoQuandoCorpoJsonForMalformado() throws Exception {
+        mockMvc.perform(post("/api/admin/filmes")
+                        .with(SecurityMockMvcRequestPostProcessors.user(novoUsuario(Perfil.ADMIN)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titulo\":"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.erro").value("Bad Request"))
+                .andExpect(jsonPath("$.mensagem").value("Corpo da requisição inválido ou malformado"))
+                .andExpect(jsonPath("$.caminho").value("/api/admin/filmes"))
+                .andExpect(jsonPath("$.errosDeCampo").isArray());
+
+        verify(filmeServico, never()).criar(any());
     }
 
     private Usuario novoUsuario(Perfil perfil) {
